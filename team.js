@@ -1,3 +1,15 @@
+/**
+ * {
+ *   count : １チームのメンバー数
+ *   member : 入力となるメンバー一覧
+ *                 {id:"1",name:"A",level:1}
+ *   lasted : 前回のメンバー一覧(IDの二次元配列)
+ *                 [["1","2"],["5","10"]]
+ *   random : 前回とメンバーに関係なくランダムにする
+ *   level  : レベルを分散する
+ *   surplus: あふれたメンバーを、どこかのチームに入れる
+ * }
+ */
 exports.team = function(param) {
   var paramList = param["member"]; // グループ内の全メンバー一覧
   var paramCount = param["count"]; // カットするメンバー数
@@ -20,14 +32,13 @@ exports.team = function(param) {
     "5" : [1,2,3,4,5]
   };
 
-  var log = function(msg) {
-    console.log(msg);
-  }
+  // ランダムに並び替える
   var sortRandom = function(ar) {
     return ar.sort(function() {
       return Math.random() - Math.random();
     });
   };
+  // 指定したレベルにふさわしい順番に並び替える
   var levelSort = function(key, plist) {
     var ar = sortList[key.toString()];
     plist.sort(function(a,b) {
@@ -37,7 +48,7 @@ exports.team = function(param) {
     });
     return plist;
   };
-
+  // １つを抽出する
   var extract = function(_count, _team, _list, _level) {
     var item = null;
     for (var i=0;i<_list.length;i++) {
@@ -64,7 +75,19 @@ exports.team = function(param) {
     }
     return item;
   }
-
+  // 前回のリストと同じメンバーかどうかチェック
+  var checkOldMember = function(_id, _teams, _oldlist) {
+    for (var i=0;i<_oldlist.length;i++) {
+      for (var n=0;n<_teams.length;n++) {
+        if (_oldlist[i].indexOf(_teams[n]["id"]) != -1) {
+          if (_oldlist[i].indexOf(_id.toString()) != -1) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
 
   // ランダムに並び替える
   list = sortRandom(paramList);
@@ -113,7 +136,21 @@ exports.team = function(param) {
     if (param["level"]) {
       item = extract(paramCount, team, list, inteam_rest_level);
     } else {
+      // レベル均等せずに、ランダムにする場合は、無条件に１つ抽出する
       item = list.splice(0,1)[0];
+    }
+    if (param["random"]) {
+      if (checkOldMember(item["id"], team, param["lasted"])) {
+        // 前回のリストにヒットした場合、１度だけ引き直す
+        list.push(item);
+        var item = null;
+        if (param["level"]) {
+          item = extract(paramCount, team, list, inteam_rest_level);
+        } else {
+          // レベル均等せずに、ランダムにする場合は、無条件に１つ抽出する
+          item = list.splice(0,1)[0];
+        }
+      }
     }
 
     if (item == null) {
@@ -136,10 +173,11 @@ exports.team = function(param) {
       inteam_rest_level = team_level;
     }
   }
+  // １つもチームが作られていない場合、１つだけ作成する
   if (group.length == 0) {
     group.push([]);
   }
-  // あふれたメンバー
+  // あふれたメンバーがいて、かつ、各チームの定員に達していない場合、適当に埋める
   for (var i=0;i<group.length;i++) {
     if (group[i].length < param["count"]) {
       if (team.length > 0) {
@@ -147,8 +185,10 @@ exports.team = function(param) {
       }
     }
   }
+  // まだあふれている場合
   if (team.length > 0) {
     if ((team.length < param["count"]) && (param["surplus"])) {
+      // あふれたメンバー数が、現在のチーム数以上ならば、分割して登録する
       var i = Math.floor(team.length / group.length);
       if (i==0) {
         i = 1;
@@ -157,13 +197,12 @@ exports.team = function(param) {
         var cutlist = team.splice(0,i);
         group[n] = group[n].concat(cutlist);
       }
+      // それでも、まだあふれている場合、最初のチームに入れる
       if (team.length > 0) {
-        if (group.length == 0) {
-          group.push([]);
-        }
         group[0].concat(team);
       }
     } else {
+      // あふれたメンバーだけで１チームとする
       group.push(team);
     }
   }

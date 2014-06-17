@@ -15,7 +15,6 @@ function output(list) {
   console.log("");
 }
 
-
 function sample() {
   var memberList = [
     {id:"1",name:"A",level:1},
@@ -35,15 +34,21 @@ function sample() {
     {id:"15",name:"O",level:4},
     {id:"16",name:"P",level:1}
   ];
-var memberList = [
-  {id:"1",name:"A",level:1},
-  {id:"2",name:"B",level:2}
-];
+  var oldlist = [
+    ["10",  "3"],
+    [ "8", "11"],
+    ["16", "14"],
+    [ "2", "15"],
+    [ "4",  "5"],
+    [ "7",  "1"],
+    [ "5",  "9"],
+    ["13", "12"]
+  ];
   var ret = team.team({
-    count  : 6,
+    count  : 2,
     member : memberList,
-    lasted : [],
-    random : false,
+    lasted : oldlist,
+    random : true,
     level  : true,
     surplus: false
   });
@@ -89,5 +94,5 @@ function randomTest() {
   call(cut, list, true, true, false);
 }
 
-//sample();
-randomTest();
+sample();
+//randomTest();
